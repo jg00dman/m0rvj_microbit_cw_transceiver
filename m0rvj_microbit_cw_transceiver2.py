@@ -122,7 +122,6 @@ def menu(*command):
             playMorse(enc('M0RVJ suggests CWOPS.org'))
             message = ''
             question = ''
-            return
         elif x is 21: #power hi U
             radio.config(power=7)
             conf[3] = i
