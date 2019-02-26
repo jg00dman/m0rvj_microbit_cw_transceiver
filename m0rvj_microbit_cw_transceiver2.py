@@ -25,8 +25,10 @@
 from microbit import *
 import radio, music
 
+ANT = Image("90909:09990:00900:00900:00900")
 radio.on()
 radio.reset()
+conf = ['A','H','N','U'] #"ABCDEF" give speeds. GHIJKLM give tones NOPQRS give channels T tutor mode UV power high/low WXYZ"
 di = 80
 dah = 240
 space = 560
@@ -69,20 +71,14 @@ def playMorse(*binarycw):
                     display.set_pixel(2,2,9)
                     pin1.write_digital(1)
                     music.pitch(tone, di)
-                    display.clear()
-                    pin1.write_digital(0)
-                    sleep(di)
                 elif c == "1":
                     display.show("-")
                     pin1.write_digital(1)
                     music.pitch(tone, dah)
-                    display.clear()
-                    pin1.write_digital(0)
-                    sleep(di)
+                display.clear()
+                pin1.write_digital(0)
+                sleep(di)
             sleep(dah)
-    if tx: display.show('Y')
-    else: display.show('?')
-
 
 #"ABCDEF" give speeds. GHIJKLM give tones NOPQRS give channels T tutor mode UV power high/low WXYZ"
 def menu(*command):
@@ -91,64 +87,65 @@ def menu(*command):
     global di
     global dah
     global space
-    power = ''
+    global conf
+    power = 'QRO'
     WPM = 15
-    conf = ['A','H','N','U']
-    try: 
-        with open('f.txt') as cwf: 
-            config = cwf.read()
-        for i in range(0,3): conf[i] = config[i]
-        config = ''
-    except:
-        display.scroll('.')
+    #try: 
+    #    with open('f.txt') as cwf: 
+    #        config = cwf.read()
+    #    for i in range(0,3): conf[i] = config[i]
+    #    config = ''
+    #except:
+    #    display.scroll('.')
         
     for i in command: conf.append(i)
     for i in conf:
         x = ord(i) - 64
-        #not alphabet
-        if x < 1 or x > 22:
+        if x < 1 or x > 22: #out of range / unknown command
             playMorse(enc('?'))
             return
-        elif x < 7:
+        elif x < 7: #"ABCDEF" give speeds.
             WPM = 12 + x * 3 #range 15-30    
             di = int( 60000 / ( WPM * 50 ) )
             dah = di * 3
             space = di * 7
-            conf[0] = chr(x+64)
-        elif x < 14: #set tone pitch
+            conf[0] = i
+        elif x < 14: #GHIJKLM tone pitch
             tone = (x + 3) * 50 #range 500hz-800hz
-            conf[1] = chr(x+64)
+            conf[1] = i
         elif x < 20:
             chn = x -13 #channels 1-6
             radio.config(channel=chn)
-            conf[2] = chr(x+64)       
-        elif x is 20: #tutor
-            tx = 2
+            conf[2] = i      
+        elif x is 20: #tutor mode needs creating
+            tx = 1
+            playMorse(enc('M0RVJ suggests CWOPS.org'))
             message = ''
             question = ''
             return
-        elif x is 21: #power hi
+        elif x is 21: #power hi U
             radio.config(power=7)
-            conf[3] = chr(x+64)
+            conf[3] = i
             power = 'QRO'
-        elif x is 22: #power lo
+        elif x is 22: #power lo V
             radio.config(power=2)
-            conf[3] = chr(x+64)
+            conf[3] = i
             power = 'QRP'
         else: pass #wxyz unknown command
     if command:
+        conf = conf[:4]
         playMorse(enc('S' + str(WPM) + "T" + str(tone) + "C" + str(chn) + power))
-        try: 
-            with open('f.txt', 'w') as f:
-                f.write(conf[0] + conf[1] + conf[2] + conf[3])
-        except: display.scroll(',')
+#        try: 
+#            with open('f.txt', 'w') as f:
+#                f.write(conf[0] + conf[1] + conf[2] + conf[3])
+#        except: display.scroll(',')
     tx = 1 #exit command mode.
     
 
 def receiver():
     global tx
     message = ''
-    if tx: display.show('Y')
+    if tx: display.show(ANT)
     else: display.show('?')
     t0 = running_time()
     while True:
@@ -157,59 +154,47 @@ def receiver():
         if received:
             playMorse(enc(received))
             message += received
+            display.show(ANT)
         if button_b.is_pressed(): return # breakin
         if pin2.is_touched(): return # breakin
         if button_a.was_pressed():
             display.scroll(message) # nb blocks receive
             message = ''
-#        if t1 > space * 2:
-#            if tx: display.show('Y')
-#            else: display.show('?')
+            return
         if len(message) > 15: message = message[1:16] #keep message buffer short
         if accelerometer.was_gesture("shake"): 
             tx = not tx
-            if tx: display.show('Y')
+            if tx: display.show(ANT)
             else: display.show('?')
 
 
 def keyer():
-    buffer = ''
-    started = running_time()
+    buffer = '' #for di or dah sent
+    started = running_time() #timer
     while True:        
             waited = running_time() - started
             key_down_time = None
-            while button_b.is_pressed():#button B keying
+            while button_b.is_pressed() or pin2.is_touched():#button B keying or capacitive touch (tip: lick 2 fingers one on gnd one on pin 2)
                 if not key_down_time: key_down_time = running_time()
                 music.pitch(tone, -1, pin0, False)
                 pin1.write_digital(1)
                 while True:
-                    if not button_b.is_pressed():
-                        music.stop()
-                        pin1.write_digital(0)
+                    if not button_b.is_pressed() and not pin2.is_touched():
                         break
-            while pin2.is_touched():#touch keying
-                if not key_down_time:
-                    key_down_time = running_time()
-                music.pitch(tone, -1, pin0, False)
-                pin1.write_digital(1)
-                while True:
-                    if not pin2.is_touched():
-                        music.stop()
-                        pin1.write_digital(0)
-                        break
+            music.stop()
+            pin1.write_digital(0)
             key_up_time = running_time()
             if key_down_time:
                 duration = key_up_time - key_down_time
                 if duration < dah:
                     buffer += '0'
-                    display.clear() # might not be needed
+                    display.clear()
                     display.set_pixel(2,2,9)
                 elif duration:
                     buffer += '1'
                     display.show('-')
                 started = running_time()
-            elif len(buffer) > 0 and waited > space: #or DASH_THRESHOLD = di * 5
-                display.clear() # might not be needed
+            elif len(buffer) > 0 and waited > dah: #or DASH_THRESHOLD = di * 5
                 character = decoder(int("0b1" + buffer, 2))
                 buffer = ''
                 display.show(character)
