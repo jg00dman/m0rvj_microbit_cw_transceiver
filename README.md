@@ -7,10 +7,12 @@ Send and receive morse Press B, or use Capacitive touch on pin 2,
 Connect Speaker to pin 0 and GND or buzzer/haptic motor to pin 1,
 Button A shows and clears the received message.
 
-Additional Features in latest dev branch:
+Additional features now baked into the v2 beta branch:
 menu accessed by shaking.
 Send a character to change settings for Speed A-F, Pitch G-M, Channel N-S and Power U=Low V=High.
 Settings are saved and reloaded after power cycle.
+Improved keyer performance.
+Improved code documentation.
 
 A video of the project in operation is here: https://www.youtube.com/watch?v=aiiqsJZU4Y8&t=19s
 
