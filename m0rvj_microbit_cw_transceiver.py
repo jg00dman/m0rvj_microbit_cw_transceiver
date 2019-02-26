@@ -4,7 +4,7 @@
 #   Connect Speaker or Headphones to Pin 0 and Ground
 #   Or connect Piezo Buzzer or Haptic Motor for Silent operation to pin1 and ground
 #   pin2 is capacitive touch keying.
-#   Copyright (C) 2017 Revd. John Goodman M0RVJ, 
+#   Copyright (C) 2019 Revd. John Goodman M0RVJ,
 #
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 #
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>L
-#   
+#
 #   This uses some public domain code by Giles Booth.
 #   See here http://www.suppertime.co.uk/blogmywiki/2016/05/microbit-morse-code-transmitter/
 ###########################nu
@@ -34,6 +34,7 @@ space = 560
 tx = True
 tone = 550
 morse = [115, 97, 42, 50, 63, 47, 39, 35, 33, 32, 48, 56, 60, 62, 120, 120, 109, 49, 109, 76, 90, 5, 24, 26, 12, 2, 18, 14, 16, 4, 23, 13, 20, 7, 6, 15, 22, 29, 10, 8, 3, 9, 17, 11, 25, 27, 28]
+music.play(music.POWER_UP)
 #encodes morse by replacing ascii char with morse binary from the morse array
 def enc(message):
     z = []
@@ -89,23 +90,25 @@ def menu(*command):
     global conf
     power = 'QRO'
     WPM = 15
-    try: 
-        with open('f.txt') as cwf: 
+    try:
+        with open('f.txt') as cwf:
             config = cwf.read()
         for i in range(0,3): conf[i] = config[i]
         config = ''
         display.scroll('.')
     except:
         display.scroll('-')
-        
-    for i in command: conf.append(i)
+    if command:
+        if command[0] is 'Z':
+            conf = ['A', 'H', 'N', 'U']
+        for i in command: conf.append(i)
     for i in conf:
         x = ord(i) - 64
-        if x < 1 or x > 22: #out of range / unknown command
+        if x < 1 or x > 23 and not 26: #out of range / unknown command
             playMorse(enc('?'))
             return
         elif x < 7: #"ABCDEF" give speeds.
-            WPM = 12 + x * 3 #range 15-30    
+            WPM = 12 + x * 3 #range 15-30
             di = int( 60000 / ( WPM * 50 ) )
             dah = di * 3
             space = di * 7
@@ -116,7 +119,7 @@ def menu(*command):
         elif x < 20:
             chn = x -13 #channels 1-6
             radio.config(channel=chn)
-            conf[2] = i      
+            conf[2] = i
 #        elif x is 20: pass #tutor mode needs creating
         elif x is 21: #power hi U
             radio.config(power=7)
@@ -138,7 +141,7 @@ def menu(*command):
                 f.write(conf[0] + conf[1] + conf[2] + conf[3])
         except: display.scroll('-')
     tx = 1 #exit command mode.
-    
+
 
 def receiver():
     global tx
@@ -160,7 +163,7 @@ def receiver():
             message = ''
             return
         if len(message) > 15: message = message[1:16] #keep message buffer short
-        if accelerometer.was_gesture("shake"): 
+        if accelerometer.was_gesture("shake"):
             tx = not tx
             if tx: return
             else: display.show('?')
@@ -169,7 +172,7 @@ def receiver():
 def keyer():
     buffer = '' #for di or dah sent
     started = running_time() #timer
-    while True:        
+    while True:
             waited = running_time() - started
             key_down_time = None
             while button_b.is_pressed() or pin2.is_touched():#button B keying or capacitive touch (tip: lick 2 fingers one on gnd one on pin 2)
@@ -201,7 +204,7 @@ def keyer():
             if waited > space * 2: return
 
 
-menu()    
+menu()
 while True:
     keyer()
     receiver()
