@@ -25,7 +25,7 @@
 from microbit import *
 import radio, music
 
-ANT = Image("90909:09990:00900:00900:00900")
+#ANT = Image("90909:09990:00900:00900:00900")
 radio.on()
 radio.reset()
 conf = ['A','H','N','U'] #"ABCDEF" give speeds. GHIJKLM give tones NOPQRS give channels T tutor mode UV power high/low WXYZ"
@@ -90,13 +90,14 @@ def menu(*command):
     global conf
     power = 'QRO'
     WPM = 15
-    #try: 
-    #    with open('f.txt') as cwf: 
-    #        config = cwf.read()
-    #    for i in range(0,3): conf[i] = config[i]
-    #    config = ''
-    #except:
-    #    display.scroll('.')
+    try: 
+        with open('f.txt') as cwf: 
+            config = cwf.read()
+        for i in range(0,3): conf[i] = config[i]
+        config = ''
+        display.scroll('.')
+    except:
+        display.scroll('-')
         
     for i in command: conf.append(i)
     for i in conf:
@@ -117,11 +118,7 @@ def menu(*command):
             chn = x -13 #channels 1-6
             radio.config(channel=chn)
             conf[2] = i      
-        elif x is 20: #tutor mode needs creating
-            tx = 1
-            playMorse(enc('M0RVJ suggests CWOPS.org'))
-            conf = conf[:4]
-            return
+#        elif x is 20: pass #tutor mode needs creating
         elif x is 21: #power hi U
             radio.config(power=7)
             conf[3] = i
@@ -133,18 +130,21 @@ def menu(*command):
         else: pass #wxyz unknown command
     if command:
         conf = conf[:4]
-        playMorse(enc('S' + str(WPM) + "T" + str(tone) + "C" + str(chn) + power))
-#        try: 
-#            with open('f.txt', 'w') as f:
-#                f.write(conf[0] + conf[1] + conf[2] + conf[3])
-#        except: display.scroll(',')
+        if command[0] is 'T':
+            playMorse(enc('M0RVJ suggests cwops.org'))
+        else:
+            playMorse(enc('S' + str(WPM) + "T" + str(tone) + "C" + str(chn) + power))
+        try:
+            with open('f.txt', 'w') as f:
+                f.write(conf[0] + conf[1] + conf[2] + conf[3])
+        except: display.scroll('-')
     tx = 1 #exit command mode.
     
 
 def receiver():
     global tx
     message = ''
-    if tx: display.show(ANT)
+    if tx: display.show('Y')
     else: display.show('?')
     t0 = running_time()
     while True:
@@ -153,7 +153,7 @@ def receiver():
         if received:
             playMorse(enc(received))
             message += received
-            display.show(ANT)
+            display.show('Y')
         if button_b.is_pressed(): return # breakin
         if pin2.is_touched(): return # breakin
         if button_a.was_pressed():
@@ -163,7 +163,7 @@ def receiver():
         if len(message) > 15: message = message[1:16] #keep message buffer short
         if accelerometer.was_gesture("shake"): 
             tx = not tx
-            if tx: display.show(ANT)
+            if tx: display.show('Y')
             else: display.show('?')
 
 
