@@ -120,8 +120,8 @@ def menu(*command):
         elif x is 20: #tutor mode needs creating
             tx = 1
             playMorse(enc('M0RVJ suggests CWOPS.org'))
-            message = ''
-            question = ''
+            conf = conf[:4]
+            return
         elif x is 21: #power hi U
             radio.config(power=7)
             conf[3] = i
