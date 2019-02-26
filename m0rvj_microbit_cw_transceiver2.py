@@ -25,7 +25,6 @@
 from microbit import *
 import radio, music
 
-#ANT = Image("90909:09990:00900:00900:00900")
 radio.on()
 radio.reset()
 conf = ['A','H','N','U'] #"ABCDEF" give speeds. GHIJKLM give tones NOPQRS give channels T tutor mode UV power high/low WXYZ"
@@ -144,7 +143,7 @@ def menu(*command):
 def receiver():
     global tx
     message = ''
-    if tx: display.show('Y')
+    if tx: display.show(Image("90909:09990:00900:00900:00900"))
     else: display.show('?')
     t0 = running_time()
     while True:
@@ -153,7 +152,7 @@ def receiver():
         if received:
             playMorse(enc(received))
             message += received
-            display.show('Y')
+            display.show(Image("90909:09990:00900:00900:00900"))
         if button_b.is_pressed(): return # breakin
         if pin2.is_touched(): return # breakin
         if button_a.was_pressed():
@@ -163,7 +162,7 @@ def receiver():
         if len(message) > 15: message = message[1:16] #keep message buffer short
         if accelerometer.was_gesture("shake"): 
             tx = not tx
-            if tx: display.show('Y')
+            if tx: return
             else: display.show('?')
 
 
